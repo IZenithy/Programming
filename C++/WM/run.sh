@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 killall Xephyr
-killall dwm
 
-Xephyr -br -ac -reset -screen 800x600 :1 &
+Xephyr -br -ac -reset -screen 1366x768 :1 &
 
 sleep 1s
 export DISPLAY=:1
