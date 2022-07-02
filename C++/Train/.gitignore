@@ -1,3 +1,4 @@
 Build/
 compile_commands.json
 .cache
+bin/app
