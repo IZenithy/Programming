@@ -1,0 +1,4 @@
+Build/
+.cache/
+compile_commands.json
+bin/dwm
