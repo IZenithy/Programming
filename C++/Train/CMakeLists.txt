@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 20 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME app)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME app.out)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 set_target_properties( ${PROJECT_NAME}
