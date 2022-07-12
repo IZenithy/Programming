@@ -1,20 +1,82 @@
-#include "IntArray.h"
+#ifndef INT_ARRAY_H
+#define INT_ARRAY_H
+
+#include <cassert>
+#include <initializer_list>
 
 namespace Container
 {
+    template<typename T>
+    class Vector
+    {
+    private:// Private verables
+        T* m_data;
+        int m_length;
 
-    IntArray::IntArray(int length) : m_data{nullptr}, m_length{length}
+
+    public:// Public verables
+
+
+    private:// Private Methods
+        Vector(const Vector&) = delete;
+
+
+    public:// Public Methods
+        Vector(void) : m_data{nullptr}, m_length{0} {}
+
+        Vector(int length);
+
+        Vector(std::initializer_list<T> list);
+
+        Vector& operator=(std::initializer_list<T> list);
+
+        Vector& operator=(Vector& vector);
+
+        ~Vector(void);
+
+        void erase(void);
+
+        T* begin(void) {return m_data;}
+
+        T* end(void) {return (m_data + m_length);}
+
+        T& operator[](int index);
+
+        int getLength(void) { return m_length; }
+
+        // Will remove every element from the vector and then resize
+        void reallocate(int length);
+
+        // Will resize without delete the elements
+        void resize(int length);
+
+        void insertBefore(T value, int index);
+
+        void remove(int index);
+
+        void insertAtBeginning(T value){insertBefore(value, 0);}
+
+        void insertAtEnd(T value){insertBefore(value, m_length);}
+    };
+
+
+
+
+
+    template<typename T>
+    Vector<T>::Vector(int length) : m_data{nullptr}, m_length{length}
     {
         assert(length >= 0 && "We can't have the length less than zero!");
 
         if(length > 0)
         {
-            m_data = new int[(long unsigned int)length];
+            m_data = new T[(long unsigned int)length];
         }
     }
 
-    IntArray::IntArray(std::initializer_list<int> list)
-        : IntArray(static_cast<int>(list.size()))
+    template<typename T>
+    Vector<T>::Vector(std::initializer_list<T> list)
+        : Vector(static_cast<int>(list.size()))
     {
         int counter{};
         for(const auto& elem : list)
@@ -24,12 +86,14 @@ namespace Container
         }
     }
 
-    IntArray::~IntArray(void)
+    template<typename T>
+    Vector<T>::~Vector(void)
     {
         delete[] m_data;
     }
 
-    IntArray& IntArray::operator=(std::initializer_list<int> list)
+    template<typename T>
+    Vector<T>& Vector<T>::operator=(std::initializer_list<T> list)
     {
         if(m_length <= static_cast<int>(list.size()))
         {
@@ -44,16 +108,17 @@ namespace Container
         return *this;
     }
 
-    IntArray& IntArray::operator=(IntArray& array)
+    template<typename T>
+    Vector<T>& Vector<T>::operator=(Vector<T>& vector)
     {
-        if(this == &array)
+        if(this == &vector)
         {
             return *this;
         }
 
-        m_length = array.m_length;
+        m_length = vector.m_length;
 
-        for(int counter{}; auto elem : array)
+        for(int counter{}; auto elem : vector)
         {
             m_data[counter] = elem;
             ++counter;
@@ -61,7 +126,8 @@ namespace Container
         return *this;
     }
 
-    void IntArray::erase(void)
+    template<typename T>
+    void Vector<T>::erase(void)
     {
         delete[] m_data;
 
@@ -69,13 +135,15 @@ namespace Container
         m_length = 0;
     }
 
-    int& IntArray::operator[](int index)
+    template<typename T>
+    T& Vector<T>::operator[](int index)
     {
         assert(index >= 0 || index < m_length);
         return m_data[index];
     }
 
-    void IntArray::reallocate(int length)
+    template<typename T>
+    void Vector<T>::reallocate(int length)
     {
         erase();
 
@@ -83,10 +151,11 @@ namespace Container
             return;
 
         m_length = length;
-        m_data = new int[(unsigned long)length];
+        m_data = new T[(unsigned long)length];
     }
 
-    void IntArray::resize(int length)
+    template<typename T>
+    void Vector<T>::resize(int length)
     {
         if(length == m_length)
         {
@@ -98,7 +167,7 @@ namespace Container
             return;
         }
 
-        int* newData{new int[(unsigned long)length]};
+        T* newData{new T[(unsigned long)length]};
 
         if(m_length > 0)
         {
@@ -118,11 +187,12 @@ namespace Container
         m_length = length;
     }
 
-    void IntArray::insertBefore(int value, int index)
+    template<typename T>
+    void Vector<T>::insertBefore(T value, int index)
     {
         assert(index >= 0 || index <= m_length);
 
-        int* newData = new int[(unsigned long)(m_length+1)];
+        T* newData = new T[(unsigned long)(m_length+1)];
 
         for(int before{0}; before < index; ++before)
         {
@@ -142,7 +212,8 @@ namespace Container
         ++m_length;
     }
 
-    void IntArray::remove(int index)
+    template<typename T>
+    void Vector<T>::remove(int index)
     {
         assert(index >= 0 || index <= m_length);
 
@@ -152,7 +223,7 @@ namespace Container
             return;
         }
 
-        int* newData = new int[(unsigned long)(m_length -1)];
+        T* newData = new T[(unsigned long)(m_length -1)];
 
         for(int before{0}; before < index; ++before)
         {
@@ -172,3 +243,4 @@ namespace Container
     }
 
 }
+#endif
