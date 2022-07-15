@@ -1,8 +1,8 @@
 #ifndef INT_ARRAY_H
 #define INT_ARRAY_H
 
-#include <cassert>
 #include <initializer_list>
+#include <stdexcept>
 
 namespace Container
 {
@@ -66,7 +66,10 @@ namespace Container
     template<typename T>
     Vector<T>::Vector(int length) : m_data{nullptr}, m_length{length}
     {
-        assert(length >= 0 && "We can't have the length less than zero!");
+        if(length < 0)
+        {
+            throw std::runtime_error("We can't have the length less than zero!");
+        }
 
         if(length > 0)
         {
@@ -138,7 +141,10 @@ namespace Container
     template<typename T>
     T& Vector<T>::operator[](int index)
     {
-        assert(index >= 0 || index < m_length);
+        if(index < 0 || index > m_length)
+        {
+            throw std::runtime_error("Infilled index");
+        }
         return m_data[index];
     }
 
@@ -190,7 +196,10 @@ namespace Container
     template<typename T>
     void Vector<T>::insertBefore(T value, int index)
     {
-        assert(index >= 0 || index <= m_length);
+        if(index < 0 || index > m_length)
+        {
+            throw std::runtime_error("Infilled index");
+        }
 
         T* newData = new T[(unsigned long)(m_length+1)];
 
@@ -215,7 +224,10 @@ namespace Container
     template<typename T>
     void Vector<T>::remove(int index)
     {
-        assert(index >= 0 || index <= m_length);
+        if(index < 0 || index > m_length)
+        {
+            throw std::runtime_error("Infilled index");
+        }
 
         if(m_length == 1)
         {
