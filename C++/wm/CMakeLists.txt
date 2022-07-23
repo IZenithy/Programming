@@ -4,9 +4,10 @@ set(CMAKE_CXX_STANDARD 20 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+
 find_package(X11 REQUIRED)
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME wm)
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME WM)
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc ${X11_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${X11_LIBRARIES})
 
 set_target_properties( ${PROJECT_NAME}
@@ -17,7 +18,7 @@ set_target_properties( ${PROJECT_NAME}
 )
 
 #Debug
-target_compile_options(${PROJECT_NAME} PUBLIC   -Werror -ggdb -O0 -Wall -Wextra  -Wextra -Weffc++  -Wsign-conversion -pedantic-errors)
+target_compile_options(${PROJECT_NAME} PUBLIC   -ggdb -O0 -Wall -Wextra  -Wextra -Weffc++  -Wsign-conversion -pedantic-errors)
 
 #Release
 # target_compile_options(${PROJECT_NAME} PUBLIC   -Werror  -O3 -Wall -Wextra  -Wextra -Weffc++  -Wsign-conversion -pedantic-errors)

@@ -1,2 +1,3 @@
 # Start dwm
-exec ./bin/dwm
+# alacritty &
+exec ./bin/WM
