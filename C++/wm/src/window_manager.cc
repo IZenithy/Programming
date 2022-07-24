@@ -20,9 +20,9 @@ namespace WM
     bool WindowManager::m_wmDetected{};
     std::mutex WindowManager::m_wmDetectedMutex{};
 
-    WindowManager::WindowManager(Display* display)
+    WindowManager::WindowManager(const std::string& displayName)
                             // Return the default root window for a given X server
-        :     m_connection{display}, m_rootWindow{DefaultRootWindow(m_connection)},
+        :     m_connection{createConnection(displayName)}, m_rootWindow{DefaultRootWindow(m_connection)},
               WM_PROTOCOLS(XInternAtom(m_connection, "WM_PROTOCOLS", false)),
               WM_DELETE_WINDOW(XInternAtom(m_connection, "WM_DELETE_WINDOW", false))
     {
@@ -65,25 +65,22 @@ namespace WM
         return *this;
     }
 
-    std::unique_ptr<WindowManager> WindowManager::Create(const std::string& display_str)
+    Display* WindowManager::createConnection(const std::string& displayName)
     {
         // 1. Open X display.
 
         //Check if display is specified
-        const char* display_c_str = display_str.empty() ? nullptr : display_str.c_str();
+        const char* display_c_str = displayName.empty() ? nullptr : displayName.c_str();
 
-        Display* display = XOpenDisplay(display_c_str);
+        Display* connection= XOpenDisplay(display_c_str);
 
 
-        if (display == nullptr)
+        if (connection == nullptr)
         {
             throw std::runtime_error("Failed to open X display " + std::string{XDisplayName(nullptr)});
-            return nullptr;
         }
 
-        // 2. Construct WindowManager instance.
-        return std::unique_ptr<WindowManager>(new WindowManager(display));
-
+        return connection;
     }
 
     void WindowManager::Run()

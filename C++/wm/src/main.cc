@@ -8,8 +8,8 @@ int main(void)
 
     try
     {
-        std::unique_ptr<WM::WindowManager> window_manager(WM::WindowManager::Create());
-        window_manager->Run();
+        WM::WindowManager windowManager{};
+        windowManager.Run();
     }
     catch(const std::exception& e)
     {

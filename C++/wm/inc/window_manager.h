@@ -56,8 +56,8 @@ namespace WM
 
     private: // Private methods
 
-        // Invoked internally by Create().
-        WindowManager(Display* display);
+        // Create connection to X server
+        Display* createConnection(const std::string& displayName);
 
         // Remove copy semantics
         WindowManager(const WindowManager&) = delete;
@@ -123,9 +123,7 @@ namespace WM
 
     public: // Public methods
 
-        // Factory method for establishing a connection to an X server and creating a
-        // WindowManager instance.
-        static std::unique_ptr<WindowManager> Create(const std::string& display_str = std::string());
+        WindowManager(const std::string& displayName = std::string{});
 
         // Disconnects from the X server.
         ~WindowManager();
