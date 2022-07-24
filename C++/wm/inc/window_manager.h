@@ -26,12 +26,12 @@ namespace WM
 
         // Whether an existing window manager has been detected. Set by OnWMDetected,
         // and hence must be static.
-        static bool wm_detected_;
+        static bool m_wmDetected;
 
         // NEW
-        // A mutex for protecting wm_detected_. It's not strictly speaking needed as
+        // A mutex for protecting m_wmDetected. It's not strictly speaking needed as
         // this program is single threaded, but better safe than sorry.
-        static std::mutex wm_detected_mutex_;
+        static std::mutex m_wmDetectedMutex;
 
         // Maps top-level windows to their frame windows.
         std::unordered_map<Window, Window> clients_;

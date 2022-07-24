@@ -17,8 +17,8 @@
 namespace WM
 {
     // Init static member
-    bool WindowManager::wm_detected_{false};
-    std::mutex WindowManager::wm_detected_mutex_{};
+    bool WindowManager::m_wmDetected{};
+    std::mutex WindowManager::m_wmDetectedMutex{};
 
     WindowManager::WindowManager(Display* display)
                             // Return the default root window for a given X server
@@ -92,8 +92,8 @@ namespace WM
         //   a. Select events on root window. Use a special error handler so we can
         //   exit gracefully if another window manager is already running.
         {
-            std::lock_guard<std::mutex> lock(wm_detected_mutex_);
-            wm_detected_ = false;
+            std::lock_guard<std::mutex> lock(m_wmDetectedMutex);
+            m_wmDetected= false;
 
             // Setup temporary error handler
             XSetErrorHandler(&WindowManager::OnWMDetected);
@@ -110,7 +110,7 @@ namespace WM
                * False means that XSync  will not discard the events
                * */
             XSync(m_connection, false);
-            if (wm_detected_)
+            if (m_wmDetected)
             {
                 throw std::runtime_error("Detected another window manager on display " +
                         std::string{XDisplayString(m_connection)});
@@ -242,7 +242,7 @@ namespace WM
             throw std::runtime_error("A window manager is running!");
 
         // Set flag.
-        wm_detected_ = true;
+        m_wmDetected= true;
         // The return value is ignored.
         return 0;
     }
