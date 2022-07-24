@@ -22,9 +22,9 @@ namespace WM
 
     WindowManager::WindowManager(Display* display)
                             // Return the default root window for a given X server
-        : display_{display}, root_{DefaultRootWindow(display_)},
-              WM_PROTOCOLS(XInternAtom(display_, "WM_PROTOCOLS", false)),
-              WM_DELETE_WINDOW(XInternAtom(display_, "WM_DELETE_WINDOW", false))
+        :     m_connection{display}, root_{DefaultRootWindow(m_connection)},
+              WM_PROTOCOLS(XInternAtom(m_connection, "WM_PROTOCOLS", false)),
+              WM_DELETE_WINDOW(XInternAtom(m_connection, "WM_DELETE_WINDOW", false))
     {
 
     }
@@ -32,20 +32,20 @@ namespace WM
     WindowManager::~WindowManager()
     {
         // Close the connection with X server
-        XCloseDisplay(display_);
+        XCloseDisplay(m_connection);
     }
 
     // Move copy constructor
     WindowManager::WindowManager(WindowManager&& wm)
     {
-        display_ = wm.display_;
+        m_connection = wm.m_connection;
 
         root_ = wm.root_;
 
         WM_PROTOCOLS = wm.WM_PROTOCOLS;
 
         wm.root_ = 0;
-        wm.display_ = nullptr;
+        wm.m_connection = nullptr;
     }
 
     // Move assignment operator
@@ -55,12 +55,12 @@ namespace WM
         if(&wm == this)
             return *this;
 
-        display_ = wm.display_;
+        m_connection = wm.m_connection;
 
         root_ = wm.root_;
 
         wm.root_ = 0;
-        wm.display_ = nullptr;
+        wm.m_connection = nullptr;
 
         return *this;
     }
@@ -100,7 +100,7 @@ namespace WM
 
             // Take control over the root window
             //            server,  window, events
-            XSelectInput(display_, root_, SubstructureRedirectMask | SubstructureNotifyMask);
+            XSelectInput(m_connection, root_, SubstructureRedirectMask | SubstructureNotifyMask);
 
               /* XSelectInput doesn't  send a request to the X server,
                *
@@ -109,11 +109,11 @@ namespace WM
                *
                * False means that XSync  will not discard the events
                * */
-            XSync(display_, false);
+            XSync(m_connection, false);
             if (wm_detected_)
             {
                 throw std::runtime_error("Detected another window manager on display " +
-                        std::string{XDisplayString(display_)});
+                        std::string{XDisplayString(m_connection)});
                 return;
             }
         }
@@ -123,7 +123,7 @@ namespace WM
 
         //   c. Grab X server to prevent windows from changing under us while we
         //   frame them.
-        XGrabServer(display_);
+        XGrabServer(m_connection);
 
         //   d. Frame existing top-level windows.
         //     i. Query existing top-level windows.
@@ -133,7 +133,7 @@ namespace WM
         Window* top_level_windows;
         unsigned int num_top_level_windows;
 
-        if (XQueryTree(display_, root_, &returned_root, &returned_parent,
+        if (XQueryTree(m_connection, root_, &returned_root, &returned_parent,
                        &top_level_windows, &num_top_level_windows) == 0)
         {
             throw std::runtime_error("We can't query the window list");
@@ -153,7 +153,7 @@ namespace WM
         XFree(top_level_windows);
 
         //   e. Ungrab X server.
-        XUngrabServer(display_);
+        XUngrabServer(m_connection);
 
 
         // 2. Main event loop.
@@ -161,7 +161,7 @@ namespace WM
         {
             // 1. Get next event.
             XEvent e;
-            XNextEvent(display_, &e);
+            XNextEvent(m_connection, &e);
             std::cout << "Received event: " << ToString(e);
 
             // 2. Dispatch event.
@@ -210,7 +210,7 @@ namespace WM
 
                 case MotionNotify:
                     // Skip any already pending motion events.
-                    while (XCheckTypedWindowEvent(display_, e.xmotion.window, MotionNotify, &e))
+                    while (XCheckTypedWindowEvent(m_connection, e.xmotion.window, MotionNotify, &e))
                     {
 
                     }
@@ -284,7 +284,7 @@ namespace WM
             throw std::runtime_error("We shouldn't be framing windows we've already framed.");
         }
 
-        if(XGetWindowAttributes(display_, w, &x_window_attrs) == 0)
+        if(XGetWindowAttributes(m_connection, w, &x_window_attrs) == 0)
         {
             throw std::runtime_error("We can't get window attributes!");
         }
@@ -303,7 +303,7 @@ namespace WM
 
         // 3. Create frame.
         const Window frame { XCreateSimpleWindow(
-        display_,
+        m_connection,
         root_,
         x_window_attrs.x,
         x_window_attrs.y,
@@ -315,25 +315,25 @@ namespace WM
         };
 
         // 4. Select events on frame.
-        XSelectInput(display_, frame, SubstructureRedirectMask | SubstructureNotifyMask);
+        XSelectInput(m_connection, frame, SubstructureRedirectMask | SubstructureNotifyMask);
 
 
         // 5. Add client to save set, so that it will be restored and kept alive if we
         // crash.
-        XAddToSaveSet(display_, w);
+        XAddToSaveSet(m_connection, w);
 
         // 6. Reparent client window to the frame
-        XReparentWindow(display_, w, frame, 0, 0);  // Offset of client window within frame.
+        XReparentWindow(m_connection, w, frame, 0, 0);  // Offset of client window within frame.
 
         // 7. Map frame, make it visible
-        XMapWindow(display_, frame);
+        XMapWindow(m_connection, frame);
 
         // 8. Save frame handle.
         clients_[w] = frame;
 
         //   a. Move windows with alt + left button.
         XGrabButton(
-            display_,
+            m_connection,
             Button1,
             Mod1Mask,
             w,
@@ -347,7 +347,7 @@ namespace WM
         //   b. Resize windows with alt + right button.
         XGrabButton
         (
-            display_,
+            m_connection,
             Button3,
             Mod1Mask,
             w,
@@ -362,8 +362,8 @@ namespace WM
         //   c. Kill windows with alt + f4.
         XGrabKey
         (
-            display_,
-            XKeysymToKeycode(display_, XK_F4),
+            m_connection,
+            XKeysymToKeycode(m_connection, XK_F4),
             Mod1Mask,
             w,
             false,
@@ -371,8 +371,8 @@ namespace WM
             GrabModeAsync);
             //   d. Switch windows with alt + tab.
             XGrabKey(
-            display_,
-            XKeysymToKeycode(display_, XK_Tab),
+            m_connection,
+            XKeysymToKeycode(m_connection, XK_Tab),
             Mod1Mask,
             w,
             false,
@@ -391,16 +391,16 @@ namespace WM
         const Window frame = clients_[w];
 
         // 1. Unmap frame.
-        XUnmapWindow(display_, frame);
+        XUnmapWindow(m_connection, frame);
 
         // 2. Reparent client window back to root window.
-        XReparentWindow( display_, w, root_, 0, 0);  // Offset of client window within root.
+        XReparentWindow( m_connection, w, root_, 0, 0);  // Offset of client window within root.
 
         // 3. Remove client window from save set, as it is now unrelated to us.
-        XRemoveFromSaveSet(display_, w);
+        XRemoveFromSaveSet(m_connection, w);
 
         // 4. Destroy frame.
-        XDestroyWindow(display_, frame);
+        XDestroyWindow(m_connection, frame);
 
         // 5. Drop reference to frame handle.
         clients_.erase(w);
@@ -436,12 +436,12 @@ namespace WM
         if (clients_.count(e.window))
         {
             const Window frame = clients_[e.window];
-            XConfigureWindow(display_, frame, e.value_mask, &changes);
+            XConfigureWindow(m_connection, frame, e.value_mask, &changes);
             std::cout << "Resize [" << frame << "] to " << Size<int>(e.width, e.height);
         }
 
         // Grant request by calling XConfigureWindow().
-        XConfigureWindow(display_, e.window, e.value_mask, &changes);
+        XConfigureWindow(m_connection, e.window, e.value_mask, &changes);
 
         std::cout << "Resize " << e.window << " to " << Size<int>(e.width, e.height);
     }
@@ -452,7 +452,7 @@ namespace WM
         Frame(e.window, false /* was_created_before_window_manager */);
 
         // 2. Actually map window.
-        XMapWindow(display_, e.window);
+        XMapWindow(m_connection, e.window);
 
     }
 
@@ -524,7 +524,7 @@ namespace WM
         int x, y;
         unsigned width, height, border_width, depth;
 
-        if(XGetGeometry( display_, frame, &returned_root, &x, &y,
+        if(XGetGeometry(m_connection, frame, &returned_root, &x, &y,
                         &width, &height, &border_width, &depth) == BadDrawable)
         {
             throw std::runtime_error("Drawable argument does not name a defined Window or Pixmap!\n");
@@ -533,7 +533,7 @@ namespace WM
         drag_start_frame_size_ = Size<int>(static_cast<int>(width), static_cast<int>(height));
 
         // 3. Raise clicked window to top.
-        XRaiseWindow(display_, frame);
+        XRaiseWindow(m_connection, frame);
     }
 
     // Ignore button release
@@ -557,7 +557,7 @@ namespace WM
             // alt + left button: Move window.
             const Position<int> dest_frame_pos = drag_start_frame_pos_ + delta;
             XMoveWindow(
-            display_,
+            m_connection,
             frame,
             dest_frame_pos.m_x, dest_frame_pos.m_y);
         }
@@ -570,12 +570,12 @@ namespace WM
             std::max(delta.m_y, -drag_start_frame_size_.m_height));
             const Size<int> dest_frame_size = drag_start_frame_size_ + size_delta;
             // 1. Resize frame.
-            XResizeWindow(display_, frame,
+            XResizeWindow(m_connection, frame,
                         static_cast<unsigned int>(dest_frame_size.m_width),
                         static_cast<unsigned int>(dest_frame_size.m_height));
 
             // 2. Resize client window.
-            XResizeWindow(display_, e.window,
+            XResizeWindow(m_connection, e.window,
                         static_cast<unsigned int>(dest_frame_size.m_width),
                         static_cast<unsigned int>(dest_frame_size.m_height));
         }
@@ -583,7 +583,7 @@ namespace WM
 
     void WindowManager::OnKeyPress(const XKeyEvent& e)
     {
-        if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(display_, XK_F4)))
+        if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_connection, XK_F4)))
         {
             // alt + f4: Close window.
             //
@@ -595,7 +595,7 @@ namespace WM
 
             int num_supported_protocols;
 
-            if (XGetWMProtocols(display_, e.window, &supported_protocols,
+            if (XGetWMProtocols(m_connection, e.window, &supported_protocols,
                     &num_supported_protocols) && (::std::find(supported_protocols,
                     supported_protocols + num_supported_protocols, WM_DELETE_WINDOW) !=
                     supported_protocols + num_supported_protocols))
@@ -614,7 +614,7 @@ namespace WM
                 // 2. Send message to window to be closed.
 
                 //TODO: Check for BadValue
-                if(XSendEvent(display_, e.window, false, 0, &msg) == BadWindow)
+                if(XSendEvent(m_connection, e.window, false, 0, &msg) == BadWindow)
                 {
                     throw std::runtime_error("We can't send close message to the window!");
                 }
@@ -622,10 +622,10 @@ namespace WM
             else
             {
                 std::cout << "Killing window " << e.window;
-                XKillClient(display_, e.window);
+                XKillClient(m_connection, e.window);
             }
         }
-        else if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(display_, XK_Tab)))
+        else if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_connection, XK_Tab)))
         {
             // alt + tab: Switch window.
             // 1. Find next window.
@@ -642,8 +642,8 @@ namespace WM
                 i = clients_.begin();
             }
             // 2. Raise and set focus.
-            XRaiseWindow(display_, i->second);
-            XSetInputFocus(display_, i->first, RevertToPointerRoot, CurrentTime);
+            XRaiseWindow(m_connection, i->second);
+            XSetInputFocus(m_connection, i->first, RevertToPointerRoot, CurrentTime);
         }
     }
 

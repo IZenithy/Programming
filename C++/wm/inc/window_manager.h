@@ -20,7 +20,7 @@ namespace WM
 
         // Handle to the underlying Xlib connection struct.
         // TODO: rename it to connection
-        Display* display_;
+        Display* m_connection;
         // Handle to root window.
         Window root_;
 
