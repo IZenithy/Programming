@@ -509,10 +509,10 @@ namespace WM
 
     void WindowManager::OnButtonPress(const XButtonEvent& e)
     {
-        // if(clients_.count(e.window)) == 0 ) WARN: Check this
-        // {
-        //     throw std::runtime_error("There is no window!\n");
-        // }
+        if(!(clients_.count(e.window)))
+        {
+            throw std::runtime_error("There is no window!\n");
+        }
 
         const Window frame = clients_[e.window];
 
@@ -544,10 +544,10 @@ namespace WM
 
     void WindowManager::OnMotionNotify(const XMotionEvent& e)
     {
-        // if(clients_.count(e.window)) // WARN: Check this
-        // {
-        //     throw std::runtime_error("There is no window!\n");
-        // }
+        if(!(clients_.count(e.window)))
+        {
+            throw std::runtime_error("There is no window!\n");
+        }
         const Window frame = clients_[e.window];
         const Position<int> drag_pos(e.x_root, e.y_root);
         const Vector2D<int> delta = drag_pos - drag_start_pos_;
