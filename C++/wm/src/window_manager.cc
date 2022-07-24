@@ -279,7 +279,7 @@ namespace WM
         // 1. Retrieve attributes of window to frame.
         XWindowAttributes x_window_attrs;
 
-        if(clients_.count(w))
+        if(m_clients.count(w))
         {
             throw std::runtime_error("We shouldn't be framing windows we've already framed.");
         }
@@ -329,7 +329,7 @@ namespace WM
         XMapWindow(m_connection, frame);
 
         // 8. Save frame handle.
-        clients_[w] = frame;
+        m_clients[w] = frame;
 
         //   a. Move windows with alt + left button.
         XGrabButton(
@@ -388,7 +388,7 @@ namespace WM
     void WindowManager::Unframe(Window w)
     {
         // We reverse the steps taken in Frame().
-        const Window frame = clients_[w];
+        const Window frame = m_clients[w];
 
         // 1. Unmap frame.
         XUnmapWindow(m_connection, frame);
@@ -403,7 +403,7 @@ namespace WM
         XDestroyWindow(m_connection, frame);
 
         // 5. Drop reference to frame handle.
-        clients_.erase(w);
+        m_clients.erase(w);
 
         std::cout  << "Unframed window " << w << " [" << frame << "]";
     }
@@ -433,9 +433,9 @@ namespace WM
 
 
         // Configure a window that is currently visible
-        if (clients_.count(e.window))
+        if (m_clients.count(e.window))
         {
-            const Window frame = clients_[e.window];
+            const Window frame = m_clients[e.window];
             XConfigureWindow(m_connection, frame, e.value_mask, &changes);
             std::cout << "Resize [" << frame << "] to " << Size<int>(e.width, e.height);
         }
@@ -478,7 +478,7 @@ namespace WM
         // If the window is a client window we manage, unframe it upon UnmapNotify. We
         // need the check because we will receive an UnmapNotify event for a frame
         // window we just destroyed ourselves.
-        if (!clients_.count(e.window))
+        if (!m_clients.count(e.window))
         {
             std::cout << "Ignore UnmapNotify for non-client window " << e.window;
             return;
@@ -509,12 +509,12 @@ namespace WM
 
     void WindowManager::OnButtonPress(const XButtonEvent& e)
     {
-        if(!(clients_.count(e.window)))
+        if(!(m_clients.count(e.window)))
         {
             throw std::runtime_error("There is no window!\n");
         }
 
-        const Window frame = clients_[e.window];
+        const Window frame = m_clients[e.window];
 
         // 1. Save initial cursor position.
         drag_start_pos_ = Position<int>(e.x_root, e.y_root);
@@ -544,11 +544,11 @@ namespace WM
 
     void WindowManager::OnMotionNotify(const XMotionEvent& e)
     {
-        if(!(clients_.count(e.window)))
+        if(!(m_clients.count(e.window)))
         {
             throw std::runtime_error("There is no window!\n");
         }
-        const Window frame = clients_[e.window];
+        const Window frame = m_clients[e.window];
         const Position<int> drag_pos(e.x_root, e.y_root);
         const Vector2D<int> delta = drag_pos - drag_start_pos_;
 
@@ -629,17 +629,17 @@ namespace WM
         {
             // alt + tab: Switch window.
             // 1. Find next window.
-            auto i = clients_.find(e.window);
+            auto i = m_clients.find(e.window);
 
-            if(i == clients_.end())
+            if(i == m_clients.end())
             {
                 throw std::runtime_error("We can't find The window!\n");
             }
             ++i;
 
-            if (i == clients_.end())
+            if (i == m_clients.end())
             {
-                i = clients_.begin();
+                i = m_clients.begin();
             }
             // 2. Raise and set focus.
             XRaiseWindow(m_connection, i->second);

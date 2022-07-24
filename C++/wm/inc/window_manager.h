@@ -34,7 +34,7 @@ namespace WM
         static std::mutex m_wmDetectedMutex;
 
         // Maps top-level windows to their frame windows.
-        std::unordered_map<Window, Window> clients_;
+        std::unordered_map<Window, Window> m_clients;
 
         // The cursor position at the start of a window move/resize.
         Position<int> drag_start_pos_;
