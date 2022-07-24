@@ -22,7 +22,7 @@ namespace WM
         // TODO: rename it to connection
         Display* m_connection;
         // Handle to root window.
-        Window root_;
+        Window m_rootWindow;
 
         // Whether an existing window manager has been detected. Set by OnWMDetected,
         // and hence must be static.

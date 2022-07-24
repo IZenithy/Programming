@@ -22,7 +22,7 @@ namespace WM
 
     WindowManager::WindowManager(Display* display)
                             // Return the default root window for a given X server
-        :     m_connection{display}, root_{DefaultRootWindow(m_connection)},
+        :     m_connection{display}, m_rootWindow{DefaultRootWindow(m_connection)},
               WM_PROTOCOLS(XInternAtom(m_connection, "WM_PROTOCOLS", false)),
               WM_DELETE_WINDOW(XInternAtom(m_connection, "WM_DELETE_WINDOW", false))
     {
@@ -40,11 +40,11 @@ namespace WM
     {
         m_connection = wm.m_connection;
 
-        root_ = wm.root_;
+        m_rootWindow = wm.m_rootWindow;
 
         WM_PROTOCOLS = wm.WM_PROTOCOLS;
 
-        wm.root_ = 0;
+        wm.m_rootWindow = 0;
         wm.m_connection = nullptr;
     }
 
@@ -57,9 +57,9 @@ namespace WM
 
         m_connection = wm.m_connection;
 
-        root_ = wm.root_;
+        m_rootWindow = wm.m_rootWindow;
 
-        wm.root_ = 0;
+        wm.m_rootWindow = 0;
         wm.m_connection = nullptr;
 
         return *this;
@@ -100,7 +100,7 @@ namespace WM
 
             // Take control over the root window
             //            server,  window, events
-            XSelectInput(m_connection, root_, SubstructureRedirectMask | SubstructureNotifyMask);
+            XSelectInput(m_connection, m_rootWindow , SubstructureRedirectMask | SubstructureNotifyMask);
 
               /* XSelectInput doesn't  send a request to the X server,
                *
@@ -133,15 +133,15 @@ namespace WM
         Window* top_level_windows;
         unsigned int num_top_level_windows;
 
-        if (XQueryTree(m_connection, root_, &returned_root, &returned_parent,
+        if (XQueryTree(m_connection, m_rootWindow, &returned_root, &returned_parent,
                        &top_level_windows, &num_top_level_windows) == 0)
         {
             throw std::runtime_error("We can't query the window list");
         }
 
-        if(returned_root != root_)
+        if(returned_root != m_rootWindow)
         {
-            throw std::runtime_error("returned_root != root_");
+            throw std::runtime_error("returned_root != m_rootWindow");
         }
 
         //     ii. Frame each top-level window.
@@ -304,7 +304,7 @@ namespace WM
         // 3. Create frame.
         const Window frame { XCreateSimpleWindow(
         m_connection,
-        root_,
+        m_rootWindow,
         x_window_attrs.x,
         x_window_attrs.y,
         static_cast<unsigned int>(x_window_attrs.width),
@@ -394,7 +394,7 @@ namespace WM
         XUnmapWindow(m_connection, frame);
 
         // 2. Reparent client window back to root window.
-        XReparentWindow( m_connection, w, root_, 0, 0);  // Offset of client window within root.
+        XReparentWindow( m_connection, w, m_rootWindow, 0, 0);  // Offset of client window within root.
 
         // 3. Remove client window from save set, as it is now unrelated to us.
         XRemoveFromSaveSet(m_connection, w);
@@ -493,7 +493,7 @@ namespace WM
         // should have this attribute set to a frame window we maintain. Only an
         // UnmapNotify event triggered by reparenting a pre-existing window will have
         // this attribute set to the root window.
-        if (e.event == root_)
+        if (e.event == m_rootWindow)
         {
             std::cout << "Ignore UnmapNotify for reparented pre-existing window " << e.window;
             return;
