@@ -162,7 +162,7 @@ namespace WM
             // 1. Get next event.
             XEvent e;
             XNextEvent(display_, &e);
-            std::cout << "Received event: "; //<<TODO: ToString(e);
+            std::cout << "Received event: " << ToString(e);
 
             // 2. Dispatch event.
             switch (e.type)
@@ -259,7 +259,7 @@ namespace WM
 
         std::cerr << "Received X error:\n"
             << "    Request: " << int(e->request_code)
-            // << " - " <<  XRequestCodeToString(e->request_code) << "\n" TODO:
+            << " - " <<  XRequestCodeToString(e->request_code) << "\n"
             << "    Error code: " << int(e->error_code)
             << " - " << error_text << "\n"
             << "    Resource ID: " << e->resourceid;
@@ -621,7 +621,7 @@ namespace WM
             }
             else
             {
-                std::cout << "INFO:Killing window " << e.window;
+                std::cout << "Killing window " << e.window;
                 XKillClient(display_, e.window);
             }
         }
